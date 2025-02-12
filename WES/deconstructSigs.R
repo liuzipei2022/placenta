@@ -40,3 +40,24 @@ for(sample in unique(df_FGR$Tumor_Sample_Barcode)){
 }
 dev.off()
 
+# Normal --------------------------------------------------------------------------
+sigs.input <- mut.to.sigs.input(mut.ref = df_Normal, 
+                                sample.id = "Tumor_Sample_Barcode", 
+                                chr = "Chromosome", 
+                                pos = "Start_Position", 
+                                ref = "Reference_Allele", 
+                                alt = "Tumor_Seq_Allele2",
+                                bsg = BSgenome.Hsapiens.UCSC.hg38)
+
+sigs.input
+
+# Determine the signatures contributing an already normalized sample
+par(mfrow=c(3, 4),mar=c(2, 2, 2, 2))
+for(sample in unique(df_Normal$Tumor_Sample_Barcode)){
+  test = whichSignatures(tumor.ref = sigs.input, 
+                         signatures.ref = signatures.cosmic, 
+                         sample.id = sample,
+                         contexts.needed = TRUE)
+  makePie(test)
+}
+dev.off()
