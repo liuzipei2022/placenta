@@ -1,6 +1,7 @@
 ## 2024-07-18
 ## only tumor mode for somatic variants calling
-## require env vep109
+## require env vep109(snakemake threads only 20)
+
 
 Files = glob_wildcards("2.mapping/{sample}_sorted_markdup.bam")
 
@@ -21,15 +22,26 @@ rule Mutect2:
     input:
         "2.mapping/{sample}_sorted_markdup.bam",
     output:
-        "5.somatic/{sample}.vcf.gz"
+        "5.somatic/{sample}_f1r2.tar.gz",
+        "5.somatic/{sample}.vcf.gz",
     shell:
         """
         /picb/lilab/tools/gatk-4.2.6.1/gatk Mutect2 \
         -R /picb/lilab5/liuzipei/placenta/WES_1/gatk_ref/Homo_sapiens_assembly38.fasta \
         -I {input[0]} \
         --germline-resource /picb/lilab5/liuzipei/placenta/WES_1/pon/af-only-gnomad.hg38.vcf.gz \
-        -O {output[0]}
+        --pon /picb/lilab5/liuzipei/placenta/WES_1/pon/somatic-hg38_1000g_pon.hg38.vcf.gz \
+        --f1r2-tar-gz {output[0]} \
+        -O {output[1]}
         """
+
+rule LearnReadOrientationModel:
+    input:
+        "5.somatic/{sample}_f1r2.tar.gz"
+    output:
+        "5.somatic/{sample}_read-orientation-model.tar.gz"
+    shell:
+        "gatk LearnReadOrientationModel -I {input[0]} -O {output[0]}"
 
 rule GetPileupSummaries:
     input:
@@ -64,6 +76,7 @@ rule FilterMutectCalls:
         "5.somatic/{sample}.vcf.gz",
         "5.somatic/filter/{sample}_contamination.table",
         "5.somatic/filter/{sample}_segments.tsv",
+        "5.somatic/{sample}_read-orientation-model.tar.gz",
     output:
         "5.somatic/filter/{sample}_filtered.vcf.gz"
     shell:
@@ -73,6 +86,7 @@ rule FilterMutectCalls:
         -V {input[0]} \
         --contamination-table {input[1]} \
         --tumor-segmentation {input[2]} \
+        --ob-priors {input[3]} \
         -O {output[0]}
         """
 

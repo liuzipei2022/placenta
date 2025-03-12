@@ -2,25 +2,25 @@ library(tidyverse)
 library(maftools)
 
 
-# setwd("/picb/lilab5/liuzipei/placenta/WES/5.somatic/filter/")
-# FGR_maf_files <- list.files(path = "/picb/lilab5/liuzipei/placenta/WES/5.somatic/filter/", pattern = "^F.*vep.maf$", full.names = T)
-# FGR_maf_files
-# Normal_maf_files <- list.files(path = "/picb/lilab5/liuzipei/placenta/WES/5.somatic/filter/", pattern = "^N.*vep.maf$", full.names = T)
-# Normal_maf_files
-# FGR_mymaf <- maftools::merge_mafs(mafs = FGR_maf_files)
-# maftools::write.mafSummary(maf = FGR_mymaf, basename = "FGR_placentas")
-# Normal_mymaf <- maftools::merge_mafs(mafs = Normal_maf_files)
-# maftools::write.mafSummary(maf = Normal_mymaf, basename = "Normal_placentas")
+setwd("/picb/lilab5/liuzipei/placenta/WES/5.somatic/filter/")
+FGR_maf_files <- list.files(path = "/picb/lilab5/liuzipei/placenta/WES/5.somatic/filter/", pattern = "^F.*vep.maf$", full.names = T)
+FGR_maf_files
+Normal_maf_files <- list.files(path = "/picb/lilab5/liuzipei/placenta/WES/5.somatic/filter/", pattern = "^N.*vep.maf$", full.names = T)
+Normal_maf_files
+FGR_mymaf <- maftools::merge_mafs(mafs = FGR_maf_files)
+maftools::write.mafSummary(maf = FGR_mymaf, basename = "FGR_placentas")
+Normal_mymaf <- maftools::merge_mafs(mafs = Normal_maf_files)
+maftools::write.mafSummary(maf = Normal_mymaf, basename = "Normal_placentas")
 
 FGR_maf <- read.maf(maf = "/picb/lilab5/liuzipei/placenta/WES/5.somatic/filter/FGR_placentas_maftools.maf")
 df_FGR <- FGR_maf@data
 table(df_FGR$Source_MAF)
 
-
 df_FGR_filter <- df_FGR %>% 
   mutate(vaf = t_alt_count/(t_alt_count + t_ref_count)) %>%
   mutate(dp = (t_alt_count + t_ref_count)) %>% 
   filter(FILTER == "PASS")
+table(df_FGR_filter$Source_MAF)
 write.table(df_FGR_filter, "/picb/lilab5/liuzipei/placenta/WES/5.somatic/filter/FGR_somatic.maf", quote = F, row.names = F, sep = "\t")
 
 # FGR <- read.maf(maf = "/picb/lilab5/liuzipei/placenta/WES/5.somatic/filter/FGR_somatic.maf")
@@ -53,6 +53,7 @@ df_Normal_filter <- df_Normal %>%
   mutate(vaf = t_alt_count/(t_alt_count + t_ref_count)) %>%
   mutate(dp = (t_alt_count + t_ref_count)) %>% 
   filter(FILTER == "PASS")
+table(df_Normal_filter$Source_MAF)
 write.table(df_Normal_filter, "/picb/lilab5/liuzipei/placenta/WES/5.somatic/filter/Normal_somatic.maf", quote = F, row.names = F, sep = "\t")
 
 # Normal <- read.maf(maf = "/picb/lilab5/liuzipei/placenta/WES/5.somatic/filter/Normal_somatic.maf")
@@ -72,9 +73,17 @@ write.table(df_Normal_filter, "/picb/lilab5/liuzipei/placenta/WES/5.somatic/filt
 # 
 # mafCompare(m1 = FGR, m2 = Normal)
 
+df_all_unfilter <- rbind(df_FGR, df_Normal)
+df_all_unfilter <- df_all_unfilter %>% 
+  mutate(vaf = t_alt_count/(t_alt_count + t_ref_count)) %>%
+  mutate(dp = (t_alt_count + t_ref_count)) %>% 
+  filter(dp > 20)
 
-
-
-
+df_all_unfilter_C2A <- df_all_unfilter %>% 
+  filter(Reference_Allele == "C" & Tumor_Seq_Allele2 == "A")
+df_all_unfilter_C2T <- df_all_unfilter %>% 
+  filter(Reference_Allele == "C" & Tumor_Seq_Allele2 == "T")
+sort(table(df_all_unfilter_C2A$FILTER))
+sort(table(df_all_unfilter_C2T$FILTER))
 
 
